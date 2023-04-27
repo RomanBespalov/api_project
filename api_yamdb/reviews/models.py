@@ -7,6 +7,8 @@ ROLES = (
     ('admin', 'Администратор'),
 )
 
+TEXT_LIMIT = 15
+
 
 class User(AbstractUser):
     bio = models.TextField(
@@ -85,3 +87,52 @@ class Genres(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Reviews(models.Model):
+    text = models.TextField(
+        verbose_name='Текст отзыва',
+        help_text='Текст вашего отзыва'
+    )
+    title = models.ForeignKey(
+        Titles,
+        verbose_name='Произведение',
+        on_delete=models.CASCADE
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор отзыва',
+    )
+    pub_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата публикации отзыва'
+    )
+
+    class Meta:
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
+
+    def __str__(self):
+        return self.text[:TEXT_LIMIT]
+
+
+class Comments(models.Model):
+    text = models.TextField(
+        verbose_name='Текст отзыва',
+        help_text='Текст вашего отзыва'
+    )
+    review = models.ForeignKey(
+        Reviews,
+        on_delete=models.CASCADE,
+        verbose_name='Отзыв',
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор комментария',
+    )
+    pub_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата публикации комментария'
+    )
