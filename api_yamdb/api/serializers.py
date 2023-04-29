@@ -25,6 +25,8 @@ class GenresSerializer(serializers.ModelSerializer):
 
 
 class ReviewsSerializer(serializers.ModelSerializer):
+    # title = serializers.SlugRelatedField(slug_field='name', read_only=True)
+    author = serializers.ReadOnlyField(source="author.username")
 
     class Meta:
         fields = '__all__'

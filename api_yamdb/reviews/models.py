@@ -90,19 +90,24 @@ class Genres(models.Model):
 
 
 class Reviews(models.Model):
+    title = models.ForeignKey(
+        Titles,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='Произведение'
+    )
     text = models.TextField(
         verbose_name='Текст отзыва',
         help_text='Текст вашего отзыва'
     )
-    title = models.ForeignKey(
-        Titles,
-        verbose_name='Произведение',
-        on_delete=models.CASCADE
-    )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
+        related_name='reviews',
         verbose_name='Автор отзыва',
+    )
+    score = models.IntegerField(
+        verbose_name='Оценка',
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,
