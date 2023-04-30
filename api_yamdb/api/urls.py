@@ -20,13 +20,11 @@ router_v1.register('users', UserViewSet, basename='users')
 router_v1.register(
     r'titles/(?P<title_id>\d+)/reviews',
     ReviewsViewSet,
-    basename='reviews'
-)
+    basename='review')
 router_v1.register(
     r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments',
     CommentsViewSet,
-    basename='comments'
-)
+    basename='comment')
 auth_urls = [
     path(
         'v1/auth/token/', TokenObtainPairView.as_view(),

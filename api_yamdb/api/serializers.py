@@ -91,13 +91,6 @@ class UserSerializer(serializers.ModelSerializer): # in view
         model = User
 
 
-class TitlesSerializer(serializers.ModelSerializer): # in view
-
-    class Meta:
-        fields = '__all__'
-        model = Titles
-
-
 class CategoriesSerializer(serializers.ModelSerializer): # in view
 
     class Meta:
@@ -110,6 +103,35 @@ class GenresSerializer(serializers.ModelSerializer): # in view
     class Meta:
         fields = '__all__'
         model = Genres
+
+
+class TitlesSerializer(serializers.ModelSerializer):
+    rating = serializers.IntegerField(read_only=True)
+    genre = GenresSerializer(many=True, )
+    category = CategoriesSerializer(many=False, required=False)
+
+    class Meta:
+        fields = ('id', 'name', 'year', 'description', 'genre', 'category',
+                  'rating')
+        model = Titles
+
+class CreateTitlesSerializer(serializers.ModelSerializer):
+    genre = serializers.SlugRelatedField(
+        many=True,
+        required=False,
+        slug_field='slug',
+        queryset=Genres.objects.all(),
+    )
+    category = serializers.SlugRelatedField(
+        many=False,
+        required=False,
+        slug_field='slug',
+        queryset=Categories.objects.all()
+    )
+
+    class Meta:
+        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
+        model = Titles
 
 
 class ReviewsSerializer(serializers.ModelSerializer): # in view
@@ -158,3 +180,24 @@ class CommentsSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Comments
+
+
+class GetTokenSerializer(serializers.Serializer):
+    username = serializers.CharField(
+        max_length=150,
+        required=True
+    )
+    confirmation_code = serializers.CharField(
+        max_length=6,
+        required=True
+    )
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    role = serializers.ReadOnlyField()
+
+    class Meta:
+        fields = (
+            'username', 'email', 'first_name', 'last_name', 'bio', 'role'
+        )
+        model = User

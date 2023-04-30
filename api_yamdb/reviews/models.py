@@ -7,6 +7,9 @@ ROLES = (
     ('admin', 'Администратор'),
 )
 
+USER_ROLE = 'user'
+MODERATOR_ROLE = 'moderator'
+ADMIN_ROLE = 'admin'
 TEXT_LIMIT = 15
 
 
@@ -21,8 +24,23 @@ class User(AbstractUser):
         max_length=30,
         choices=ROLES,
         blank=True,
-        null=True,
+        # null=True,
     )
+
+    class Meta:
+        ordering = ['-id']
+
+    @property
+    def is_admin(self):
+        return self.is_staff or self.role == ADMIN_ROLE
+
+    @property
+    def is_moderator(self):
+        return self.role == MODERATOR_ROLE
+
+    @property
+    def is_user(self):
+        return self.role == USER_ROLE
 
 
 class Categories(models.Model):
