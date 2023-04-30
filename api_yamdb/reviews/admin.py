@@ -1,5 +1,5 @@
 from django.contrib import admin
-from reviews.models import User, Titles, Categories, Genres
+from reviews.models import User, Titles, Categories, Genres, Reviews, Comments
 
 
 class UserAdmin(admin.ModelAdmin):
@@ -25,7 +25,17 @@ class TitlesAdmin(admin.ModelAdmin):
     get_genre.short_description = 'Жанры'
 
 
+class ReviewsAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'text', 'author', 'score', 'pub_date')
+
+
+class CommentsAdmin(admin.ModelAdmin):
+    list_display = ('id', 'text', 'review', 'author', 'pub_date')
+
+
 admin.site.register(User, UserAdmin)
 admin.site.register(Titles, TitlesAdmin)
 admin.site.register(Categories, CategoriesAdmin)
 admin.site.register(Genres, GenresAdmin)
+admin.site.register(Reviews, ReviewsAdmin)
+admin.site.register(Comments, CommentsAdmin)

@@ -1,6 +1,6 @@
 import csv
 from django.core.management.base import BaseCommand
-from reviews.models import User, Titles, Categories, Genres
+from reviews.models import User, Titles, Categories, Genres, Reviews, Comments
 
 
 # class Command_0(BaseCommand):
@@ -73,6 +73,42 @@ from reviews.models import User, Titles, Categories, Genres
 #                 mymodel.save()
 
 
+# class Command(BaseCommand):
+#     help = 'Import data from csv file'
+
+#     def add_arguments(self, parser):
+#         parser.add_argument('filename', type=str)
+
+#     def handle(self, *args, **options):
+#         filename = options['filename']
+#         with open(filename, 'r') as csvfile:
+#             reader = csv.DictReader(csvfile)
+#             for row in reader:
+#                 title_obj = Titles.objects.get(id=row['title_id'])
+#                 genre = Genres.objects.get(id=row['genre_id'])
+#                 title_obj.genre.add(genre)
+
+
+# class Command(BaseCommand):
+#     help = 'Import data from csv file'
+
+#     def add_arguments(self, parser):
+#         parser.add_argument('filename', type=str)
+
+#     def handle(self, *args, **options):
+#         filename = options['filename']
+#         with open(filename, 'r') as csvfile:
+#             reader = csv.DictReader(csvfile)
+#             for row in reader:
+#                 mymodel = Reviews()
+#                 mymodel.title_id = row['title_id']
+#                 mymodel.text = row['text']
+#                 mymodel.author_id = row['author']
+#                 mymodel.score = row['score']
+#                 mymodel.pub_date = row['pub_date']
+#                 mymodel.save()
+
+
 class Command(BaseCommand):
     help = 'Import data from csv file'
 
@@ -84,6 +120,9 @@ class Command(BaseCommand):
         with open(filename, 'r') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                title_obj = Titles.objects.get(id=row['title_id'])
-                genre = Genres.objects.get(id=row['genre_id'])
-                title_obj.genre.add(genre)
+                mymodel = Comments()
+                mymodel.review_id = row['review_id']
+                mymodel.text = row['text']
+                mymodel.author_id = row['author']
+                mymodel.pub_date = row['pub_date']
+                mymodel.save()

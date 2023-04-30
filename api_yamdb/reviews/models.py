@@ -144,3 +144,10 @@ class Comments(models.Model):
         auto_now_add=True,
         verbose_name='Дата публикации комментария'
     )
+
+    class Meta:
+        verbose_name = 'Комментарий к отзыву'
+        verbose_name_plural = 'Комментарии к отзывам'
+
+    def __str__(self):
+        return self.text[:TEXT_LIMIT]
