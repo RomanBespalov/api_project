@@ -1,10 +1,11 @@
 import secrets
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets
 from rest_framework_simplejwt.views import TokenViewBase
 from rest_framework.generics import CreateAPIView
 from reviews.models import Categories, Comments, Genres, Reviews, Titles
-from .serializers import TokenObtainPairSerializer, UserSerializer, UserSignUpSerializer
+from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import ValidationError
+from api.permissions import IsAuthorOrReadOnly
 from api.serializers import (
     CategoriesSerializer,
     CommentsSerializer,
@@ -24,8 +25,6 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
 
 from rest_framework import status, viewsets
-from rest_framework.response import Response
-from .serializers import UserSerializer
 
 
 
@@ -93,8 +92,7 @@ class ReviewsViewSet(viewsets.ModelViewSet): # in url
         serializer.save(author=self.request.user, title=title)
 
 
-class CommentsViewSet(viewsets.ModelViewSet): # in url
+class CommentsViewSet(viewsets.ModelViewSet):
     queryset = Comments.objects.all()
     serializer_class = CommentsSerializer
-    # permission_classes = [IsAuthorOrReadOnly]
-
+    permission_classes = [IsAuthorOrReadOnly]

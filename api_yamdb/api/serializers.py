@@ -7,6 +7,7 @@ from reviews.models import User
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.validators import MaxValueValidator, MinValueValidator
 
+
 class TokenObtainPairSerializer(serializers.Serializer): #in view
     username = serializers.CharField(required=True)
     confirmation_code = serializers.CharField(required=True)
@@ -143,3 +144,17 @@ class CommentsSerializer(serializers.ModelSerializer): # in view
     class Meta:
         model = Comments
         exclude = ('review',)
+class ReviewsSerializer(serializers.ModelSerializer):
+    # title = serializers.SlugRelatedField(slug_field='name', read_only=True)
+    author = serializers.ReadOnlyField(source="author.username")
+
+    class Meta:
+        fields = '__all__'
+        model = Reviews
+
+
+class CommentsSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        fields = '__all__'
+        model = Comments

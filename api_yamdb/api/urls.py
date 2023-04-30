@@ -37,6 +37,7 @@ auth_urls = [
         name='sign_up'
     ),
 ]
+
 urlpatterns = [
     path('v1/', include(router_v1.urls)),
     path('v1/', include(router_v1.urls)),
