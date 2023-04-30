@@ -24,11 +24,14 @@ class User(AbstractUser):
         max_length=30,
         choices=ROLES,
         blank=True,
-        # null=True,
+        null=True,
     )
-
-    class Meta:
-        ordering = ['-id']
+    username = models.TextField(
+        max_length=150,
+        verbose_name='Ник',
+        blank=True,
+        null=True,
+    )
 
     @property
     def is_admin(self):
@@ -51,6 +54,7 @@ class Category(models.Model):
     slug = models.SlugField(
         max_length=50,
         verbose_name='Slug категории',
+        unique=True,
     )
 
     class Meta:
@@ -69,6 +73,7 @@ class Genre(models.Model):
     slug = models.SlugField(
         max_length=50,
         verbose_name='Slug жанра',
+        unique=True,
     )
 
     class Meta:

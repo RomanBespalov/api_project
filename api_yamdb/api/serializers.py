@@ -3,7 +3,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, MaxLengthValidator
 
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
@@ -82,8 +82,21 @@ class UserSignUpSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        max_length=150,
+        validators=[MaxLengthValidator(150)]
+    )
+    first_name = serializers.CharField(
+        max_length=150,
+        validators=[MaxLengthValidator(150)]
+    )
+    last_name = serializers.CharField(
+        max_length=150,
+        validators=[MaxLengthValidator(150)]
+    )
     email = serializers.EmailField(
-        max_length=254
+        max_length=254,
+        validators=(MaxLengthValidator(254),),
     )
 
     class Meta:

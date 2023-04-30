@@ -1,4 +1,5 @@
 import secrets
+from rest_framework import filters, permissions
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.views import TokenViewBase
 from rest_framework.generics import CreateAPIView
@@ -6,6 +7,7 @@ from .registration.token_generator import get_tokens_for_user
 from reviews.models import Category, Comment, Genre, Review, Title, User
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
 from api.permissions import IsAuthorOrReadOnly, AdminOrReadOnly
 from api.serializers import (
     CategoriesSerializer,
@@ -105,7 +107,10 @@ def get_token(request):
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = get_user_model().objects.all()
-    serializer_class = UserSerializer
+    serializer_class = UserSerializer()
+    permission_classes = (permissions.IsAdminUser,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username',)
 
 
 class TitleFilter(FilterSet):
@@ -135,6 +140,9 @@ class TitlesViewSet(viewsets.ModelViewSet):
 class CategoriesViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategoriesSerializer
+    pagination_class = PageNumberPagination
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('slug',)
 
 
 class GenresViewSet(viewsets.ModelViewSet):
@@ -144,7 +152,7 @@ class GenresViewSet(viewsets.ModelViewSet):
 
 class ReviewsViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewsSerializer
-    permission_classes = [IsAuthorOrReadOnly, ]
+    permission_classes = (IsAuthorOrReadOnly, )
 
     def get_queryset(self):
         title = get_object_or_404(
