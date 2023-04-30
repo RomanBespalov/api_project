@@ -1,14 +1,14 @@
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 from rest_framework_simplejwt.tokens import RefreshToken
-from reviews.models import Categories, Comments, Genres, Reviews, Titles
 from django.contrib.auth import get_user_model
-from reviews.models import User
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.validators import MaxValueValidator, MinValueValidator
 
+from reviews.models import Category, Comment, Genre, Review, Title, User
 
-class TokenObtainPairSerializer(serializers.Serializer): #in view
+
+class TokenObtainPairSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
     confirmation_code = serializers.CharField(required=True)
 
@@ -66,7 +66,7 @@ class SignUpSerializer(serializers.ModelSerializer):
         model = User
 
 
-class UserSignUpSerializer(serializers.ModelSerializer): # in view
+class UserSignUpSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
@@ -81,7 +81,7 @@ class UserSignUpSerializer(serializers.ModelSerializer): # in view
         return attrs
 
 
-class UserSerializer(serializers.ModelSerializer): # in view
+class UserSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         max_length=254
     )
@@ -91,18 +91,18 @@ class UserSerializer(serializers.ModelSerializer): # in view
         model = User
 
 
-class CategoriesSerializer(serializers.ModelSerializer): # in view
+class CategoriesSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = '__all__'
-        model = Categories
+        model = Category
 
 
-class GenresSerializer(serializers.ModelSerializer): # in view
+class GenresSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = '__all__'
-        model = Genres
+        model = Genre
 
 
 class TitlesSerializer(serializers.ModelSerializer):
@@ -113,73 +113,60 @@ class TitlesSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('id', 'name', 'year', 'description', 'genre', 'category',
                   'rating')
-        model = Titles
+        model = Title
+
 
 class CreateTitlesSerializer(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(
         many=True,
         required=False,
         slug_field='slug',
-        queryset=Genres.objects.all(),
+        queryset=Genre.objects.all(),
     )
     category = serializers.SlugRelatedField(
         many=False,
         required=False,
         slug_field='slug',
-        queryset=Categories.objects.all()
+        queryset=Category.objects.all()
     )
 
     class Meta:
         fields = ('id', 'name', 'year', 'description', 'genre', 'category')
-        model = Titles
+        model = Title
 
 
-class ReviewsSerializer(serializers.ModelSerializer): # in view
+class ReviewsSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
     )
 
     def create(self, validated_data):
-        if Reviews.objects.filter(
+        if Review.objects.filter(
             author=self.context['request'].user,
             title=validated_data.get('title')
         ).exists():
             raise serializers.ValidationError(
                 'Нельзя оставить больше одного обзора.')
 
-        review = Reviews.objects.create(**validated_data,)
+        review = Review.objects.create(**validated_data,)
 
         return review
 
     class Meta:
-        model = Reviews
+        model = Review
         exclude = ('title',)
 
 
-class CommentsSerializer(serializers.ModelSerializer): # in view
+class CommentsSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
     )
 
     class Meta:
-        model = Comments
+        model = Comment
         exclude = ('review',)
-class ReviewsSerializer(serializers.ModelSerializer):
-    # title = serializers.SlugRelatedField(slug_field='name', read_only=True)
-    author = serializers.ReadOnlyField(source="author.username")
-
-    class Meta:
-        fields = '__all__'
-        model = Reviews
-
-
-class CommentsSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        fields = '__all__'
-        model = Comments
 
 
 class GetTokenSerializer(serializers.Serializer):
