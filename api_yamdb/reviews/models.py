@@ -25,34 +25,6 @@ class User(AbstractUser):
     )
 
 
-class Titles(models.Model):
-    name = models.CharField(
-        max_length=256,
-        verbose_name='Название',
-    )
-    year = models.IntegerField(
-        verbose_name='Год выпуска',
-    )
-    description = models.TextField(
-        verbose_name='Описание',
-        blank=True,
-        null=True,
-    )
-    genre = models.SlugField(
-        verbose_name='Slug жанра',
-    )
-    category = models.TextField(
-        verbose_name='Slug категории',
-    )
-
-    class Meta:
-        verbose_name = 'Произведение'
-        verbose_name_plural = 'Произведения'
-
-    def __str__(self):
-        return self.name
-
-
 class Categories(models.Model):
     name = models.CharField(
         max_length=256,
@@ -84,6 +56,37 @@ class Genres(models.Model):
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
+
+    def __str__(self):
+        return self.name
+
+
+class Titles(models.Model):
+    name = models.CharField(
+        max_length=256,
+        verbose_name='Название',
+    )
+    year = models.IntegerField(
+        verbose_name='Год выпуска',
+    )
+    description = models.TextField(
+        verbose_name='Описание',
+        blank=True,
+        null=True,
+    )
+    genre = models.ManyToManyField(Genres)
+    category = models.ForeignKey(
+        Categories,
+        on_delete=models.SET_NULL,
+        related_name='category',
+        blank=True,
+        null=True,
+        verbose_name='Slug категории',
+    )
+
+    class Meta:
+        verbose_name = 'Произведение'
+        verbose_name_plural = 'Произведения'
 
     def __str__(self):
         return self.name
