@@ -42,7 +42,7 @@ class ReviewsViewSet(viewsets.ModelViewSet):
             Titles,
             id=self.kwargs.get('title_id'))
         return Reviews.objects.filter(title=title)
-    
+
     def perform_create(self, serializer):
         title = get_object_or_404(Titles, pk=self.kwargs.get("title_id"))
         if title.reviews.filter(author=self.request.user).exists():
