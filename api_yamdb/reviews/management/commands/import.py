@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand
 from reviews.models import User, Titles, Categories, Genres, Reviews, Comments
 
 
-# class Command_0(BaseCommand):
+# class Command(BaseCommand):
 #     help = 'Import data from csv file'
 
 #     def add_arguments(self, parser):
@@ -15,6 +15,7 @@ from reviews.models import User, Titles, Categories, Genres, Reviews, Comments
 #             reader = csv.DictReader(csvfile)
 #             for row in reader:
 #                 mymodel = User()
+#                 mymodel.id = row['id']
 #                 mymodel.username = row['username']
 #                 mymodel.email = row['email']
 #                 mymodel.role = row['role']
