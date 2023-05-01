@@ -1,28 +1,29 @@
 from rest_framework import serializers
-from rest_framework.generics import get_object_or_404
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import get_user_model
-from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.core.validators import MaxValueValidator, MinValueValidator, MaxLengthValidator
-
 from reviews.models import Category, Comment, Genre, Review, Title, User
+from django.contrib.auth.validators import UnicodeUsernameValidator
 
 
-class TokenObtainPairSerializer(serializers.Serializer):
-    username = serializers.CharField(required=True)
-    confirmation_code = serializers.CharField(required=True)
+'''Пользовательские сериализаторы (User)'''
+class UserSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(
+        max_length=254
+    )
 
-    def validate(self, attrs):
-        user = get_object_or_404(
-            get_user_model(), username=attrs.get('username')
+    class Meta:
+        fields = (
+            'username', 'email', 'first_name', 'last_name', 'bio', 'role'
         )
-        if user.confirmation_code != attrs.get('confirmation_code'):
-            raise serializers.ValidationError(
-                'Некорректный код подтверждения'
-            )
-        refresh = RefreshToken.for_user(user)
-        data = {'access_token': str(refresh.access_token)}
-        return data
+        model = User
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    role = serializers.ReadOnlyField()
+
+    class Meta:
+        fields = (
+            'username', 'email', 'first_name', 'last_name', 'bio', 'role'
+        )
+        model = User
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -39,7 +40,6 @@ class SignUpSerializer(serializers.ModelSerializer):
     def validate(self, data):
         username = data.get('username')
         email = data.get('email')
-
 
         if username == 'me':
             raise serializers.ValidationError(
@@ -67,55 +67,27 @@ class SignUpSerializer(serializers.ModelSerializer):
         model = User
 
 
-class UserSignUpSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = get_user_model()
-        fields = ('email', 'username')
-
-    def validate(self, attrs):
-        super().validate(attrs)
-        if attrs.get('username') == 'me':
-            raise serializers.ValidationError(
-                'Некорректное имя пользователя'
-            )
-        return attrs
-
-
-class UserSerializer(serializers.ModelSerializer):
+class GetTokenSerializer(serializers.Serializer):
     username = serializers.CharField(
         max_length=150,
-        validators=[MaxLengthValidator(150)]
+        required=True
     )
-    first_name = serializers.CharField(
-        max_length=150,
-        validators=[MaxLengthValidator(150)]
-    )
-    last_name = serializers.CharField(
-        max_length=150,
-        validators=[MaxLengthValidator(150)]
-    )
-    email = serializers.EmailField(
-        max_length=254,
-        validators=(MaxLengthValidator(254),),
+    confirmation_code = serializers.CharField(
+        max_length=6,
+        required=True
     )
 
-    class Meta:
-        fields = '__all__'
-        model = User
-
-
+'''Категории. Жанры. Титлы, Ревью, Комменты.'''
 class CategoriesSerializer(serializers.ModelSerializer):
 
     class Meta:
-        fields = '__all__'
+        fields = ('name', 'slug')
         model = Category
-
 
 class GenresSerializer(serializers.ModelSerializer):
 
     class Meta:
-        fields = '__all__'
+        fields = ('name', 'slug')
         model = Genre
 
 
@@ -128,7 +100,6 @@ class TitlesSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'year', 'description', 'genre', 'category',
                   'rating')
         model = Title
-
 
 
 class CreateTitlesSerializer(serializers.ModelSerializer):
@@ -166,27 +137,9 @@ class CommentsSerializer(serializers.ModelSerializer):
         slug_field='username',
         read_only=True,
     )
+    # class Meta:
+    #     model = Comment
+    #     exclude = ('review',)
     class Meta:
         model = Comment
-        exclude = ('review',)
-
-
-class GetTokenSerializer(serializers.Serializer):
-    username = serializers.CharField(
-        max_length=150,
-        required=True
-    )
-    confirmation_code = serializers.CharField(
-        max_length=6,
-        required=True
-    )
-
-
-class UserProfileSerializer(serializers.ModelSerializer):
-    role = serializers.ReadOnlyField()
-
-    class Meta:
-        fields = (
-            'username', 'email', 'first_name', 'last_name', 'bio', 'role'
-        )
-        model = User
+        fields = ('id', 'text', 'author', 'pub_date')

@@ -27,12 +27,6 @@ class User(AbstractUser):
         blank=True,
         null=True,
     )
-    username = models.TextField(
-        max_length=150,
-        verbose_name='Ник',
-        blank=True,
-        null=True,
-    )
     confirmation_code = models.CharField(
         max_length=6,
         blank=True

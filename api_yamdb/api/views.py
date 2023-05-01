@@ -1,13 +1,8 @@
-
-import secrets
-from rest_framework import filters, permissions
-from django.contrib.auth import get_user_model
 from .registration.token_generator import get_tokens_for_user
 from reviews.models import Category, Comment, Genre, Review, Title, User
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
-from rest_framework.pagination import PageNumberPagination
-from api.permissions import IsAuthorOrReadOnly, AdminOrReadOnly, AuthorAdminModeratorOrReadOnly
+from api.permissions import IsAuthorOrReadOnly, AdminOrReadOnly, AdminAndSuperUser, AuthorAdminModeratorOrReadOnly
 from api.serializers import (
     CategoriesSerializer,
     CommentsSerializer,
@@ -19,29 +14,20 @@ from api.serializers import (
     SignUpSerializer,
     GetTokenSerializer,
     UserProfileSerializer,
-    UserSignUpSerializer,
-    TokenObtainPairSerializer,
 )
 from rest_framework.response import Response
-from .permissions import IsAuthorOrReadOnly, AdminAndSuperUser
-from django.conf import settings
-from django.core.mail import send_mail
-from .permissions import AdminAndSuperUser
-from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import ValidationError
 from django.db.models import Avg
 from rest_framework import status, viewsets, filters
 from rest_framework.decorators import api_view, permission_classes
 from .registration.send_code_to_email import send_confirm_code_to_email
-from .registration.token_generator import get_tokens_for_user
 from .registration.confirm_code_generator import generator
 from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 from django_filters.rest_framework import (CharFilter, DjangoFilterBackend,
                                            FilterSet)
+from rest_framework.permissions import IsAuthenticated  
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
-
-
+'''Пользовательские вьюхи'''
 class CustomPagination(PageNumberPagination):
 
     def get_paginated_response(self, data):
@@ -57,15 +43,6 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = LimitOffsetPagination
-
-
-class TokenObtainPairView(viewsets.TokenViewBase):
-    serializer_class = TokenObtainPairSerializer
-
-
-class UserSignUpView(viewsets.CreateAPIView):
-    serializer_class = UserSignUpSerializer
-
     permission_classes = (AdminAndSuperUser,)
     pagination_class = CustomPagination
     filter_backends = (filters.SearchFilter,)
@@ -73,26 +50,16 @@ class UserSignUpView(viewsets.CreateAPIView):
     lookup_field = "username"
     http_method_names = ['get', 'post', 'patch', 'delete']
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        token = secrets.token_urlsafe()
-        user, _ = get_user_model().objects.get_or_create(
-            username=serializer.data.get('username'),
-            email=serializer.data.get('email'),
-            confirmation_code=token
-        )
-        message = (f'Для подтверждения регистрации на сайте '
-                   f'пожалуйста, переходите по данной ссылке: '
-                   f'{settings.HOST_NAME}?code={token}')
-        send_mail(
-            subject='Регистрация на сайте',
-            message=message,
-            from_email=settings.FROM_EMAIL,
-            recipient_list=[user.email]
-        )
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
+    def create(self, request, **kwargs):
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.data.get('email')
+            if User.objects.filter(email=email).first():
+                return Response(serializer.errors,
+                                status=status.HTTP_400_BAD_REQUEST)
+            user, created = User.objects.get_or_create(**serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 def signup(request):
@@ -129,13 +96,24 @@ def get_token(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class UserViewSet(viewsets.ModelViewSet):
-    queryset = get_user_model().objects.all()
-    serializer_class = UserSerializer()
-    permission_classes = (permissions.IsAdminUser,)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('username',)
+@api_view(['PATCH', 'GET'])
+@permission_classes([IsAuthenticated])
+def me(request):
+    if request.method == "GET":
+        serializer = UserProfileSerializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
+    if request.method == "PATCH":
+        serializer = UserProfileSerializer(
+            request.user, partial=True, data=request.data
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+'''Титлы, Комменты, Жанры, Категории, Ревью'''
 
 class TitleFilter(FilterSet):
     category = CharFilter(field_name='category__slug')
@@ -154,6 +132,7 @@ class TitlesViewSet(viewsets.ModelViewSet):
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
+
 
     def get_serializer_class(self):
         if self.action == 'create' or self.action == 'partial_update':
