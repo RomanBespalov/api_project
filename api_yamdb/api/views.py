@@ -24,10 +24,13 @@ from .registration.confirm_code_generator import generator
 from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 from django_filters.rest_framework import (CharFilter, DjangoFilterBackend,
                                            FilterSet)
-from rest_framework.permissions import IsAuthenticated  
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from django.core.exceptions import PermissionDenied
 
 '''Пользовательские вьюхи'''
+
+
 class CustomPagination(PageNumberPagination):
 
     def get_paginated_response(self, data):
@@ -60,6 +63,7 @@ class UserViewSet(viewsets.ModelViewSet):
             user, created = User.objects.get_or_create(**serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['POST'])
 def signup(request):
@@ -113,7 +117,9 @@ def me(request):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 '''Титлы, Комменты, Жанры, Категории, Ревью'''
+
 
 class TitleFilter(FilterSet):
     category = CharFilter(field_name='category__slug')
@@ -133,7 +139,6 @@ class TitlesViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 
-
     def get_serializer_class(self):
         if self.action == 'create' or self.action == 'partial_update':
             return self.create_serializer_class
@@ -143,14 +148,30 @@ class TitlesViewSet(viewsets.ModelViewSet):
 class CategoriesViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategoriesSerializer
+    permission_classes = (AdminOrReadOnly, )
     pagination_class = PageNumberPagination
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('slug',)
+    search_fields = ('name',)
+
+    # def perform_destroy(self, instance):
+    #     if self.request.user.is_admin:
+    #         raise PermissionDenied('Удаление чужого контента запрещено!')
+    #     instance.delete()
+    #     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class GenresViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenresSerializer
+    permission_classes = (AdminOrReadOnly, )
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+
+    # def perform_destroy(self, instance):
+    #     if not self.request.user.is_admin:
+    #         raise PermissionDenied('Удаление чужого контента запрещено!')
+    #     instance.delete()
+    #     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):

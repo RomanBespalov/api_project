@@ -4,6 +4,8 @@ from django.contrib.auth.validators import UnicodeUsernameValidator
 
 
 '''Пользовательские сериализаторы (User)'''
+
+
 class UserSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         max_length=254
@@ -77,12 +79,16 @@ class GetTokenSerializer(serializers.Serializer):
         required=True
     )
 
+
 '''Категории. Жанры. Титлы, Ревью, Комменты.'''
+
+
 class CategoriesSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = ('name', 'slug')
         model = Category
+
 
 class GenresSerializer(serializers.ModelSerializer):
 

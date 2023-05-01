@@ -17,20 +17,18 @@ class AdminAndSuperUser(permissions.BasePermission):
 
 class AdminOrReadOnly(BasePermission):
     def has_permission(self, request, view):
-        user = request.user
-        if not user.is_anonymous:
-            if user.role == 'user' or user.role == 'moderator':
+        if not request.user.is_anonymous:
+            if request.user.role == 'user' or request.user.role == 'moderator':
                 return False
         return (
             request.method in SAFE_METHODS
-            or user.is_authenticated and user.is_admin
+            or request.user.is_authenticated and request.user.is_admin
         )
 
     def has_object_permission(self, request, view, obj):
-        user = request.user
         return (
             request.method in SAFE_METHODS
-            or user.is_authenticated and user.is_admin
+            or request.user.is_authenticated and request.user.is_admin
         )
 
 
