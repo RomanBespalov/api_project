@@ -154,18 +154,6 @@ class ReviewsSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
-    def create(self, validated_data):
-        if Review.objects.filter(
-            author=self.context['request'].user,
-            title=validated_data.get('title')
-        ).exists():
-            raise serializers.ValidationError(
-                'Нельзя оставить больше одного обзора.')
-
-        review = Review.objects.create(**validated_data,)
-
-        return review
-
     class Meta:
         model = Review
         exclude = ('title',)

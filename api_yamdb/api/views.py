@@ -8,7 +8,7 @@ from reviews.models import Category, Comment, Genre, Review, Title, User
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
-from api.permissions import IsAuthorOrReadOnly, AdminOrReadOnly
+from api.permissions import IsAuthorOrReadOnly, AdminOrReadOnly, AuthorAdminModeratorOrReadOnly
 from api.serializers import (
     CategoriesSerializer,
     CommentsSerializer,
@@ -38,7 +38,7 @@ from .registration.confirm_code_generator import generator
 from rest_framework.pagination import LimitOffsetPagination
 from django_filters.rest_framework import (CharFilter, DjangoFilterBackend,
                                            FilterSet)
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 
 
 class TokenObtainPairView(TokenViewBase):
@@ -172,22 +172,20 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 class CommentsViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentsSerializer
-    permission_classes = [IsAuthorOrReadOnly]
+    permission_classes = [AuthorAdminModeratorOrReadOnly, IsAuthenticatedOrReadOnly]
 
-
-@api_view(['PATCH', 'GET'])
-@permission_classes([IsAuthenticated])
-def me(request):
-    if request.method == "GET":
-        serializer = UserProfileSerializer(request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    if request.method == "PATCH":
-        serializer = UserProfileSerializer(
-            request.user, partial=True, data=request.data
+    def get_queryset(self):
+        review = get_object_or_404(
+            Review,
+            pk=self.kwargs.get("review_id"),
+            title=self.kwargs.get("title_id"),
         )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Comment.objects.filter(review=review)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def perform_create(self, serializer):
+        review = get_object_or_404(
+            Review,
+            pk=self.kwargs.get("review_id"),
+            title=self.kwargs.get("title_id"),
+        )
+        serializer.save(author=self.request.user, review=review)
