@@ -176,7 +176,7 @@ class GenresViewSet(viewsets.ModelViewSet):
 
 class ReviewsViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewsSerializer
-    permission_classes = (IsAuthorOrReadOnly, )
+    permission_classes = (AuthorAdminModeratorOrReadOnly, )
 
     def get_queryset(self):
         title = get_object_or_404(
