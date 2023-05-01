@@ -1,2 +1,3 @@
 # api_yamdb
-api_yamdb 12
+api_yamdb
+ 

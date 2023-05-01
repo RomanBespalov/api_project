@@ -1,5 +1,5 @@
 from django.contrib import admin
-from reviews.models import User, Titles, Categories, Genres, Reviews, Comments
+from reviews.models import User, Title, Category, Genre, Review, Comment
 
 
 class UserAdmin(admin.ModelAdmin):
@@ -34,8 +34,8 @@ class CommentsAdmin(admin.ModelAdmin):
 
 
 admin.site.register(User, UserAdmin)
-admin.site.register(Titles, TitlesAdmin)
-admin.site.register(Categories, CategoriesAdmin)
-admin.site.register(Genres, GenresAdmin)
-admin.site.register(Reviews, ReviewsAdmin)
-admin.site.register(Comments, CommentsAdmin)
+admin.site.register(Title, TitlesAdmin)
+admin.site.register(Category, CategoriesAdmin)
+admin.site.register(Genre, GenresAdmin)
+admin.site.register(Review, ReviewsAdmin)
+admin.site.register(Comment, CommentsAdmin)
