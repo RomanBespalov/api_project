@@ -27,7 +27,7 @@ from django_filters.rest_framework import (CharFilter, DjangoFilterBackend,
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.core.exceptions import PermissionDenied
-
+from rest_framework.decorators import action
 '''Пользовательские вьюхи'''
 
 
@@ -63,7 +63,26 @@ class UserViewSet(viewsets.ModelViewSet):
             user, created = User.objects.get_or_create(**serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    
+    @action(
+        methods=("get", "patch"),
+        detail=False,
+        permission_classes=[IsAuthenticated],
+    )
+    def me(self, request):
+        # serializer = self.get_serializer(
+        #     request.user, data=request.data, partial=True
+        # )
+        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        if not (serializer.is_valid()):
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+        if request.method == "GET":
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer.validated_data["role"] = request.user.role
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 def signup(request):
@@ -100,22 +119,22 @@ def get_token(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['PATCH', 'GET'])
-@permission_classes([IsAuthenticated])
-def me(request):
-    if request.method == "GET":
-        serializer = UserProfileSerializer(request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+# @api_view(['PATCH', 'GET'])
+# @permission_classes([IsAuthenticated])
+# def me(request):
+#     if request.method == "GET":
+#         serializer = UserProfileSerializer(request.user)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    if request.method == "PATCH":
-        serializer = UserProfileSerializer(
-            request.user, partial=True, data=request.data
-        )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+#     if request.method == "PATCH":
+#         serializer = UserProfileSerializer(
+#             request.user, partial=True, data=request.data
+#         )
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 '''Титлы, Комменты, Жанры, Категории, Ревью'''
