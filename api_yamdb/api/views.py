@@ -1,7 +1,4 @@
-import secrets
 from django.contrib.auth import get_user_model
-from rest_framework_simplejwt.views import TokenViewBase
-from rest_framework.generics import CreateAPIView
 from .registration.token_generator import get_tokens_for_user
 from reviews.models import Categories, Comments, Genres, Reviews, Titles
 from django.shortcuts import get_object_or_404
@@ -13,61 +10,61 @@ from api.serializers import (
     GenresSerializer,
     ReviewsSerializer,
     TitlesSerializer,
-    TokenObtainPairSerializer,
     UserSerializer,
-    UserSignUpSerializer,
     CreateTitlesSerializer,
     SignUpSerializer,
     GetTokenSerializer,
     UserProfileSerializer,
 )
-from rest_framework.response import Response # for UserSignUpView
-from api_yamdb import settings # for UserSignUpView
-from django.core.mail import send_mail # for UserSignUpView
-from rest_framework import status # for UserSignUpView
+from rest_framework.response import Response
 from .permissions import IsAuthorOrReadOnly, AdminAndSuperUser
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
 from django.db.models import Avg
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, filters
 from rest_framework.decorators import api_view, permission_classes
 from reviews.models import User
 from .registration.send_code_to_email import send_confirm_code_to_email
 from .registration.token_generator import get_tokens_for_user
 from .registration.confirm_code_generator import generator
-from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 from django_filters.rest_framework import (CharFilter, DjangoFilterBackend,
                                            FilterSet)
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.permissions import IsAuthenticated
 
 
-class TokenObtainPairView(TokenViewBase): #in url
-    serializer_class = TokenObtainPairSerializer
+class CustomPagination(PageNumberPagination):
+
+    def get_paginated_response(self, data):
+        return Response({
+            'count': self.page.paginator.count,
+            'next': self.get_next_link(),
+            'previous': self.get_previous_link(),
+            'results': data
+        })
 
 
-class UserSignUpView(CreateAPIView): #in url
-    serializer_class = UserSignUpSerializer
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    pagination_class = LimitOffsetPagination
     permission_classes = (AdminAndSuperUser,)
+    pagination_class = CustomPagination
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username',)
+    lookup_field = "username"
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        token = secrets.token_urlsafe()
-        user, _ = get_user_model().objects.get_or_create(
-            username=serializer.data.get('username'),
-            email=serializer.data.get('email'),
-            confirmation_code=token
-        )
-        message = (f'Для подтверждения регистрации на сайте '
-                   f'пожалуйста, переходите по данной ссылке: {settings.HOST_NAME}?code={token}')
-        send_mail(
-            subject='Регистрация на сайте',
-            message=message,
-            from_email=settings.FROM_EMAIL,
-            recipient_list=[user.email]
-        )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def create(self, request, **kwargs):
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.data.get('email')
+            if User.objects.filter(email=email).first():
+                return Response(serializer.errors,
+                                status=status.HTTP_400_BAD_REQUEST)
+            user, created = User.objects.get_or_create(**serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 def signup(request):
@@ -86,6 +83,7 @@ def signup(request):
         return Response(serializer.data, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(['POST'])
 def get_token(request):
     serializer = GetTokenSerializer(data=request.data)
@@ -101,10 +99,6 @@ def get_token(request):
                             status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class UserViewSet(viewsets.ModelViewSet): # in url
-    queryset = get_user_model().objects.all()
-    serializer_class = UserSerializer
 
 
 class TitleFilter(FilterSet):
@@ -137,17 +131,18 @@ class TitlesViewSet(viewsets.ModelViewSet):
             return self.create_serializer_class
         return self.serializer_class
 
-class CategoriesViewSet(viewsets.ModelViewSet): # in url
+
+class CategoriesViewSet(viewsets.ModelViewSet):
     queryset = Categories.objects.all()
     serializer_class = CategoriesSerializer
 
 
-class GenresViewSet(viewsets.ModelViewSet): # in url
+class GenresViewSet(viewsets.ModelViewSet):
     queryset = Genres.objects.all()
     serializer_class = GenresSerializer
 
 
-class ReviewsViewSet(viewsets.ModelViewSet): # in url
+class ReviewsViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewsSerializer
     permission_classes = [IsAuthorOrReadOnly, ]
 

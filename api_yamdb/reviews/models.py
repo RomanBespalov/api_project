@@ -26,6 +26,10 @@ class User(AbstractUser):
         blank=True,
         # null=True,
     )
+    confirmation_code = models.CharField(
+        max_length=6,
+        blank=True
+    )
 
     class Meta:
         ordering = ['-id']
@@ -94,7 +98,7 @@ class Titles(models.Model):
     )
     genre = models.ManyToManyField(Genres)
     category = models.ForeignKey(
-        Categories,
+        'Categories',
         on_delete=models.SET_NULL,
         related_name='category',
         blank=True,

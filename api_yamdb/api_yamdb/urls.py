@@ -15,7 +15,7 @@ urlpatterns = [
         name='redoc'
     ),
     path('api/', include('api.urls')),
-    path('api/v1/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'), #Авторизация по JWT-токенам
-    path('api/v1/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'), #Авторизация по JWT-токенам
-    path('api/v1/token/verify/', TokenVerifyView.as_view(), name='token_verify'), #Авторизация по JWT-токенам
+    path('api/v1/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/v1/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/v1/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 ]
