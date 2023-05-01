@@ -70,9 +70,6 @@ class UserViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated],
     )
     def me(self, request):
-        # serializer = self.get_serializer(
-        #     request.user, data=request.data, partial=True
-        # )
         serializer = UserSerializer(request.user, data=request.data, partial=True)
         if not (serializer.is_valid()):
             return Response(
