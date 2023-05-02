@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from reviews.models import Category, Comment, Genre, Review, Title, User, ROLES
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
 '''Пользовательские сериализаторы (User)'''
@@ -10,8 +10,7 @@ class UserSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         max_length=254
     )
-    # role = serializers.CharField(default='user')
-    
+
     class Meta:
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role'
@@ -81,11 +80,11 @@ class GetTokenSerializer(serializers.Serializer):
     )
 
 
-'''Категории. Жанры. Титлы, Ревью, Комменты.'''
+'''Категории. Жанры. Титлы. Ревью. Комменты.'''
 
 
 class CategoriesSerializer(serializers.ModelSerializer):
-    
+
     class Meta:
         fields = ('name', 'slug')
         model = Category
@@ -144,9 +143,7 @@ class CommentsSerializer(serializers.ModelSerializer):
         slug_field='username',
         read_only=True,
     )
-    # class Meta:
-    #     model = Comment
-    #     exclude = ('review',)
+
     class Meta:
         model = Comment
         fields = ('id', 'text', 'author', 'pub_date')

@@ -141,10 +141,10 @@ class Review(models.Model):
         auto_now_add=True,
         verbose_name='Дата публикации отзыва'
     )
-        
+
     def __str__(self):
         return self.text[:TEXT_LIMIT]
-    
+
     class Meta:
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'

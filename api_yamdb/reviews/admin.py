@@ -17,7 +17,12 @@ class GenresAdmin(admin.ModelAdmin):
 
 
 class TitlesAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'year', 'description', 'get_genre', 'category')
+    list_display = ('id',
+                    'name',
+                    'year',
+                    'description',
+                    'get_genre',
+                    'category')
 
     def get_genre(self, obj):
         return ", ".join([genre.name for genre in obj.genre.all()])

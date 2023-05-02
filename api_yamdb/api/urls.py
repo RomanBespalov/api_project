@@ -8,6 +8,7 @@ from api.views import (TitlesViewSet,
                        CommentsViewSet,)
 from . import views
 
+
 router_v1 = DefaultRouter()
 
 router_v1.register('users', UserViewSet, basename='users')

@@ -1,8 +1,25 @@
-from .registration.token_generator import get_tokens_for_user
-from reviews.models import Category, Comment, Genre, Review, Title, User
-from django.shortcuts import get_object_or_404
+from rest_framework.pagination import (LimitOffsetPagination,
+                                       PageNumberPagination)
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.decorators import action, api_view
+from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
-from api.permissions import IsAuthorOrReadOnly, AdminOrReadOnly, AdminAndSuperUser, AuthorAdminModeratorOrReadOnly
+from django_filters.rest_framework import (CharFilter,
+                                           DjangoFilterBackend,
+                                           FilterSet)
+from rest_framework import status, viewsets, filters, mixins
+
+from django.shortcuts import get_object_or_404
+from django.db.models import Avg
+
+from .registration.send_code_to_email import send_confirm_code_to_email
+from .registration.confirm_code_generator import generator
+from .registration.token_generator import get_tokens_for_user
+
+from api.permissions import (AdminOrReadOnly, AdminAndSuperUser,
+                             AuthorAdminModeratorOrReadOnly)
+from reviews.models import Category, Comment, Genre, Review, Title, User
 from api.serializers import (
     CategoriesSerializer,
     CommentsSerializer,
@@ -12,23 +29,20 @@ from api.serializers import (
     UserSerializer,
     CreateTitlesSerializer,
     SignUpSerializer,
-    GetTokenSerializer,
-    UserProfileSerializer,
-)
-from rest_framework.response import Response
-from django.db.models import Avg
-from rest_framework import status, viewsets, filters
-from rest_framework.decorators import api_view, permission_classes
-from .registration.send_code_to_email import send_confirm_code_to_email
-from .registration.confirm_code_generator import generator
-from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
-from django_filters.rest_framework import (CharFilter, DjangoFilterBackend,
-                                           FilterSet)
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from django.core.exceptions import PermissionDenied
-from rest_framework.decorators import action
-'''Пользовательские вьюхи'''
+    GetTokenSerializer,)
+
+
+'''Вспомогательные классы.'''
+
+
+class CreateListViewSet(
+    mixins.DestroyModelMixin,
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet
+):
+    pass
 
 
 class CustomPagination(PageNumberPagination):
@@ -40,6 +54,9 @@ class CustomPagination(PageNumberPagination):
             'previous': self.get_previous_link(),
             'results': data
         })
+
+
+'''Пользовательские представления.'''
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -63,14 +80,17 @@ class UserViewSet(viewsets.ModelViewSet):
             user, created = User.objects.get_or_create(**serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
     @action(
         methods=("get", "patch"),
         detail=False,
         permission_classes=[IsAuthenticated],
     )
     def me(self, request):
-        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        serializer = UserSerializer(
+            request.user,
+            data=request.data,
+            partial=True)
         if not (serializer.is_valid()):
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST
@@ -80,6 +100,7 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer.validated_data["role"] = request.user.role
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 def signup(request):
@@ -116,24 +137,6 @@ def get_token(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# @api_view(['PATCH', 'GET'])
-# @permission_classes([IsAuthenticated])
-# def me(request):
-#     if request.method == "GET":
-#         serializer = UserProfileSerializer(request.user)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-
-#     if request.method == "PATCH":
-#         serializer = UserProfileSerializer(
-#             request.user, partial=True, data=request.data
-#         )
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_200_OK)
-
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
 '''Титлы, Комменты, Жанры, Категории, Ревью'''
 
 
@@ -163,31 +166,31 @@ class TitlesViewSet(viewsets.ModelViewSet):
 
 class CategoriesViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
+    permission_classes = (AdminOrReadOnly,)
     serializer_class = CategoriesSerializer
-    permission_classes = (AdminOrReadOnly, )
-    pagination_class = PageNumberPagination
+    pagination_class = LimitOffsetPagination
+    lookup_field = 'slug'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
-    # def perform_destroy(self, instance):
-    #     if self.request.user.is_admin:
-    #         raise PermissionDenied('Удаление чужого контента запрещено!')
-    #     instance.delete()
-    #     return Response(status=status.HTTP_204_NO_CONTENT)
+    def retrieve(self, request, pk=None, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def partial_update(self, request, slug):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-class GenresViewSet(viewsets.ModelViewSet):
+class GenresViewSet(CreateListViewSet):
     queryset = Genre.objects.all()
+    permission_classes = (AdminOrReadOnly,)
     serializer_class = GenresSerializer
-    permission_classes = (AdminOrReadOnly, )
+    pagination_class = LimitOffsetPagination
+    lookup_field = 'slug'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
-    # def perform_destroy(self, instance):
-    #     if not self.request.user.is_admin:
-    #         raise PermissionDenied('Удаление чужого контента запрещено!')
-    #     instance.delete()
-    #     return Response(status=status.HTTP_204_NO_CONTENT)
+    def retrieve(self, request, pk=None, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
@@ -212,7 +215,8 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 class CommentsViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentsSerializer
-    permission_classes = [AuthorAdminModeratorOrReadOnly, IsAuthenticatedOrReadOnly]
+    permission_classes = [AuthorAdminModeratorOrReadOnly,
+                          IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         review = get_object_or_404(
