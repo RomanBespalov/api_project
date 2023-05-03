@@ -1,22 +1,24 @@
-from rest_framework.pagination import (LimitOffsetPagination,
-                                       PageNumberPagination)
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
-from django_filters.rest_framework import (CharFilter,
-                                           DjangoFilterBackend,
-                                           FilterSet)
-from rest_framework import status, viewsets, filters, mixins
+from django_filters.rest_framework import DjangoFilterBackend
+
+from rest_framework import status, viewsets, filters
 
 from django.shortcuts import get_object_or_404
 from django.db.models import Avg
+
+from api.mixins import CreateListViewSet
 
 from .registration.send_code_to_email import send_confirm_code_to_email
 from .registration.confirm_code_generator import generator
 from .registration.token_generator import get_tokens_for_user
 
+from api.filters import TitleFilter
+from api.paginators import CustomPagination
 from api.permissions import (AdminOrReadOnly, AdminAndSuperUser,
                              AuthorAdminModeratorOrReadOnly)
 from reviews.models import Category, Comment, Genre, Review, Title, User
@@ -30,30 +32,6 @@ from api.serializers import (
     CreateTitlesSerializer,
     SignUpSerializer,
     GetTokenSerializer,)
-
-
-'''Вспомогательные классы.'''
-
-
-class CreateListViewSet(
-    mixins.DestroyModelMixin,
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    viewsets.GenericViewSet
-):
-    pass
-
-
-class CustomPagination(PageNumberPagination):
-
-    def get_paginated_response(self, data):
-        return Response({
-            'count': self.page.paginator.count,
-            'next': self.get_next_link(),
-            'previous': self.get_previous_link(),
-            'results': data
-        })
 
 
 '''Пользовательские представления.'''
@@ -72,14 +50,13 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def create(self, request, **kwargs):
         serializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
-            email = serializer.data.get('email')
-            if User.objects.filter(email=email).first():
-                return Response(serializer.errors,
-                                status=status.HTTP_400_BAD_REQUEST)
-            user, created = User.objects.get_or_create(**serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data.get('email')
+        if User.objects.filter(email=email).first():
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+        _, _ = User.objects.get_or_create(**serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(
         methods=("get", "patch"),
@@ -105,48 +82,36 @@ class UserViewSet(viewsets.ModelViewSet):
 @api_view(['POST'])
 def signup(request):
     serializer = SignUpSerializer(data=request.data)
-    if serializer.is_valid():
-        username = serializer.data['username']
-        email = serializer.data['email']
-
-        user, created = User.objects.get_or_create(
-            username=username,
-            email=email
-        )
-        user.confirmation_code = generator()
-        user.save()
-        send_confirm_code_to_email(user, email)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer.is_valid(raise_exception=True)
+    username = serializer.validated_data['username']
+    email = serializer.validated_data['email']
+    user, _ = User.objects.get_or_create(
+        username=username,
+        email=email
+    )
+    user.confirmation_code = generator()
+    user.save()
+    send_confirm_code_to_email(user, email)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
 def get_token(request):
     serializer = GetTokenSerializer(data=request.data)
-    if serializer.is_valid():
-        username = serializer.data['username']
-        code = serializer.data['confirmation_code']
-        if User.objects.filter(username=username).first():
-            user = User.objects.get(username=username)
-            if user.confirmation_code == code:
-                token = get_tokens_for_user(user)
-                return Response(token, status=status.HTTP_200_OK)
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
-        return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer.is_valid(raise_exception=True)
+    username = serializer.validated_data['username']
+    code = serializer.validated_data['confirmation_code']
+    if User.objects.filter().first():
+        user = User.objects.get(username=username)
+        if user.confirmation_code == code:
+            token = get_tokens_for_user(user)
+            return Response(token, status=status.HTTP_200_OK)
+        return Response(serializer.errors,
+                        status=status.HTTP_400_BAD_REQUEST)
+    return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
 
 '''Титлы, Комменты, Жанры, Категории, Ревью'''
-
-
-class TitleFilter(FilterSet):
-    category = CharFilter(field_name='category__slug')
-    genre = CharFilter(field_name='genre__slug')
-
-    class Meta:
-        model = Title
-        fields = ('name', 'year')
 
 
 class TitlesViewSet(viewsets.ModelViewSet):
@@ -164,7 +129,7 @@ class TitlesViewSet(viewsets.ModelViewSet):
         return self.serializer_class
 
 
-class CategoriesViewSet(viewsets.ModelViewSet):
+class CategoriesViewSet(CreateListViewSet):
     queryset = Category.objects.all()
     permission_classes = (AdminOrReadOnly,)
     serializer_class = CategoriesSerializer
@@ -174,9 +139,6 @@ class CategoriesViewSet(viewsets.ModelViewSet):
     search_fields = ('name',)
 
     def retrieve(self, request, pk=None, **kwargs):
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def partial_update(self, request, slug):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 

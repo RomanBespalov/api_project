@@ -1,5 +1,9 @@
+import datetime
+from django.forms import ValidationError
 from rest_framework import serializers
+
 from django.contrib.auth.validators import UnicodeUsernameValidator
+
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
@@ -43,7 +47,7 @@ class SignUpSerializer(serializers.ModelSerializer):
         username = data.get('username')
         email = data.get('email')
 
-        if username == 'me':
+        if username == 'me' or username == 'Me' or username == 'ME':
             raise serializers.ValidationError(
                 'Имя пользователя не должно быть "me"'
             )
@@ -121,6 +125,14 @@ class CreateTitlesSerializer(serializers.ModelSerializer):
         slug_field='slug',
         queryset=Category.objects.all()
     )
+    year = serializers.IntegerField()
+
+    def validator_year(value):
+        if value < 1900 or value > datetime.datetime.now().year:
+            raise ValidationError(
+                ('%(value)s is not a correcrt year!'),
+                params={'value': value},
+            )
 
     class Meta:
         fields = ('id', 'name', 'year', 'description', 'genre', 'category')
@@ -132,6 +144,12 @@ class ReviewsSerializer(serializers.ModelSerializer):
         slug_field='username',
         read_only=True,
     )
+
+    def validate_score(self, value):
+        if 0 > value > 10:
+            raise serializers.ValidationError(
+                'Оценка по шкале от 0 до 10 включительно!')
+        return value
 
     class Meta:
         model = Review

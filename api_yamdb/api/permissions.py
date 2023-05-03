@@ -1,6 +1,8 @@
 from rest_framework import permissions
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
+from reviews.models import USER_ROLE, MODERATOR_ROLE
+
 
 class AdminAndSuperUser(permissions.BasePermission):
     """Админ или суперюзер"""
@@ -18,7 +20,8 @@ class AdminAndSuperUser(permissions.BasePermission):
 class AdminOrReadOnly(BasePermission):
     def has_permission(self, request, view):
         if not request.user.is_anonymous:
-            if request.user.role == 'user' or request.user.role == 'moderator':
+            if (request.user.role == USER_ROLE
+               or request.user.role == MODERATOR_ROLE):
                 return False
         return (
             request.method in SAFE_METHODS

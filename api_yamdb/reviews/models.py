@@ -2,16 +2,17 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 
-ROLES = (
-    ('user', 'Пользователь'),
-    ('moderator', 'Модератор'),
-    ('admin', 'Администратор'),
-)
 
 USER_ROLE = 'user'
 MODERATOR_ROLE = 'moderator'
 ADMIN_ROLE = 'admin'
 TEXT_LIMIT = 15
+
+ROLES = (
+    (USER_ROLE, 'Пользователь'),
+    (MODERATOR_ROLE, 'Модератор'),
+    (ADMIN_ROLE, 'Администратор'),
+)
 
 
 class User(AbstractUser):
@@ -135,7 +136,7 @@ class Review(models.Model):
     )
     score = models.IntegerField(
         verbose_name='Оценка',
-        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        validators=[MinValueValidator(1), MaxValueValidator(10)]
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,
@@ -146,6 +147,7 @@ class Review(models.Model):
         return self.text[:TEXT_LIMIT]
 
     class Meta:
+        ordering = ['-pub_date']
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
         constraints = (
