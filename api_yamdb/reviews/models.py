@@ -103,7 +103,7 @@ class Title(models.Model):
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
-        related_name='category',
+        related_name='titles',
         blank=True,
         null=True,
         verbose_name='Slug категории',
