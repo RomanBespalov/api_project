@@ -25,7 +25,7 @@ class TitlesAdmin(admin.ModelAdmin):
                     'category')
 
     def get_genre(self, obj):
-        return Title.objects.filter(name__startswith='Beatles').values()
+        return ", ".join(obj.genre.values_list("genre", flat=True))
 
     get_genre.short_description = 'Жанры'
 
