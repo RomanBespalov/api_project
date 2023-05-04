@@ -4,17 +4,12 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-
 from rest_framework import status, viewsets, filters
-
 from django.shortcuts import get_object_or_404
 from django.db.models import Avg
 
-from api.mixins import CreateListViewSet
-
 from .registration.send_code_to_email import send_confirm_code_to_email
 from .registration.confirm_code_generator import generator
-
 from api.filters import TitleFilter
 from api.paginators import CustomPagination
 from api.permissions import (AdminAndSuperUser,
@@ -30,6 +25,7 @@ from api.serializers import (
     CreateTitlesSerializer,
     SignUpSerializer,
     GetTokenSerializer,)
+from api.mixins import CreateListViewSet
 
 
 '''Пользовательские представления.'''

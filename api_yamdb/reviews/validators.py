@@ -1,6 +1,6 @@
-from django.forms import ValidationError
-
 import datetime
+
+from django.forms import ValidationError
 
 
 def my_year_validator(value):

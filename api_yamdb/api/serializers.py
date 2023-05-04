@@ -1,11 +1,10 @@
 from django.forms import ValidationError
+from django.shortcuts import get_object_or_404
+from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.utils import timezone
 from rest_framework import serializers
 
-from django.contrib.auth.validators import UnicodeUsernameValidator
-
 from reviews.models import Category, Comment, Genre, Review, Title, User
-from django.shortcuts import get_object_or_404
-from datetime import timezone
 
 
 '''Пользовательские сериализаторы (User)'''
@@ -153,7 +152,7 @@ class ReviewsSerializer(serializers.ModelSerializer):
     )
 
     def validate_score(self, value):
-        if 0 <= value <= 10:
+        if value < 0 or value > 10:
             raise serializers.ValidationError('Оценка по 10-бальной шкале!')
         return value
 
