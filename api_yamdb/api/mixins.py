@@ -10,3 +10,5 @@ class CreateListViewSet(mixins.DestroyModelMixin,
                         viewsets.GenericViewSet,):
     permission_classes = (AdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
+    lookup_field = 'slug'
+    search_fields = ('name',)

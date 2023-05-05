@@ -27,9 +27,6 @@ class UserSerializer(BaseSerializer):
 class UserProfileSerializer(BaseSerializer):
     role = serializers.ReadOnlyField()
 
-    class Meta(BaseSerializer.Meta):
-        pass
-
 
 class SignUpSerializer(serializers.ModelSerializer):
     username = serializers.SlugField(

@@ -90,17 +90,17 @@ def signup(request):
 @api_view(['POST'])
 def get_token(request):
     serializer = GetTokenSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    username = serializer.validated_data['username']
-    code = serializer.validated_data['confirmation_code']
-    if User.objects.filter(username=username).first():
-        user = User.objects.get(username=username)
-        if user.confirmation_code == code:
-            token = get_tokens_for_user(user)
-            return Response(token, status=status.HTTP_200_OK)
-        return Response(serializer.errors,
-                        status=status.HTTP_400_BAD_REQUEST)
-    return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+    if serializer.is_valid():
+        username = serializer.data['username']
+        code = serializer.data['confirmation_code']
+        if user := User.objects.filter(username=username).first():
+            if user.confirmation_code == code:
+                token = get_tokens_for_user(user)
+                return Response(token, status=status.HTTP_200_OK)
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 '''Титлы, Комменты, Жанры, Категории, Ревью'''
@@ -123,18 +123,13 @@ class TitlesViewSet(viewsets.ModelViewSet):
 class CategoriesViewSet(CreateListViewSet):
     queryset = Category.objects.all()
     serializer_class = CategoriesSerializer
-    lookup_field = 'slug'
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
 
 
 class GenresViewSet(CreateListViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenresSerializer
-    pagination_class = LimitOffsetPagination
-    lookup_field = 'slug'
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
