@@ -1,13 +1,12 @@
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets, filters
 from django.shortcuts import get_object_or_404
 from django.db.models import Avg
-
 from .registration.send_code_to_email import send_confirm_code_to_email
 from .registration.token_generator import get_tokens_for_user
 from .registration.confirm_code_generator import generator
