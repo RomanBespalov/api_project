@@ -9,22 +9,23 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Avg
 
 from .registration.send_code_to_email import send_confirm_code_to_email
+from .registration.token_generator import get_tokens_for_user
 from .registration.confirm_code_generator import generator
 from api.filters import TitleFilter
+from api.permissions import AdminOrReadOnly
 from api.paginators import CustomPagination
 from api.permissions import (AdminAndSuperUser,
                              AuthorAdminModeratorOrReadOnly)
 from reviews.models import Category, Comment, Genre, Review, Title, User
-from api.serializers import (
-    CategoriesSerializer,
-    CommentsSerializer,
-    GenresSerializer,
-    ReviewsSerializer,
-    TitlesSerializer,
-    UserSerializer,
-    CreateTitlesSerializer,
-    SignUpSerializer,
-    GetTokenSerializer,)
+from api.serializers import (CategoriesSerializer,
+                             CommentsSerializer,
+                             GenresSerializer,
+                             ReviewsSerializer,
+                             TitlesSerializer,
+                             UserSerializer,
+                             CreateTitlesSerializer,
+                             SignUpSerializer,
+                             GetTokenSerializer,)
 from api.mixins import CreateListViewSet
 
 
@@ -91,7 +92,12 @@ def get_token(request):
     serializer = GetTokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     username = serializer.validated_data['username']
+    code = serializer.validated_data['confirmation_code']
     if User.objects.filter(username=username).first():
+        user = User.objects.get(username=username)
+        if user.confirmation_code == code:
+            token = get_tokens_for_user(user)
+            return Response(token, status=status.HTTP_200_OK)
         return Response(serializer.errors,
                         status=status.HTTP_400_BAD_REQUEST)
     return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
@@ -102,10 +108,9 @@ def get_token(request):
 
 class TitlesViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.annotate(rating=Avg("reviews__score"))
-    permission_classes = (CreateListViewSet,)
+    permission_classes = (AdminOrReadOnly,)
     serializer_class = TitlesSerializer
     create_serializer_class = CreateTitlesSerializer
-    pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 
@@ -117,9 +122,7 @@ class TitlesViewSet(viewsets.ModelViewSet):
 
 class CategoriesViewSet(CreateListViewSet):
     queryset = Category.objects.all()
-    permission_classes = (CreateListViewSet,)
     serializer_class = CategoriesSerializer
-    pagination_class = LimitOffsetPagination
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
@@ -127,7 +130,6 @@ class CategoriesViewSet(CreateListViewSet):
 
 class GenresViewSet(CreateListViewSet):
     queryset = Genre.objects.all()
-    permission_classes = (CreateListViewSet,)
     serializer_class = GenresSerializer
     pagination_class = LimitOffsetPagination
     lookup_field = 'slug'

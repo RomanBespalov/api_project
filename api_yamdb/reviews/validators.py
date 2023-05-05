@@ -1,10 +1,9 @@
-import datetime
-
+from django.utils import timezone
 from django.forms import ValidationError
 
 
-def my_year_validator(value):
-    if value < 1900 or value > datetime.datetime.now().year:
+def year_validator(value):
+    if value < 1900 or value > timezone.now().year:
         raise ValidationError(
             ('%(value)s is not a correcrt year!'),
             params={'value': value},

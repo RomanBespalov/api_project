@@ -23,9 +23,6 @@ class UserSerializer(BaseSerializer):
         max_length=254
     )
 
-    class Meta(BaseSerializer.Meta):
-        pass
-
 
 class UserProfileSerializer(BaseSerializer):
     role = serializers.ReadOnlyField()
