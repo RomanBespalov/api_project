@@ -18,6 +18,16 @@ ROLES = (
 
 
 class User(AbstractUser):
+    first_name = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True
+    )
+    last_name = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True
+    )
     bio = models.TextField(
         verbose_name='Биография',
         blank=True,
