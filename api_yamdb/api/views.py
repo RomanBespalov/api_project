@@ -110,6 +110,7 @@ class TitlesViewSet(viewsets.ModelViewSet):
     permission_classes = (AdminOrReadOnly,)
     serializer_class = TitlesSerializer
     create_serializer_class = CreateTitlesSerializer
+    pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 
@@ -122,13 +123,11 @@ class TitlesViewSet(viewsets.ModelViewSet):
 class CategoriesViewSet(CreateListViewSet):
     queryset = Category.objects.all()
     serializer_class = CategoriesSerializer
-    filter_backends = (filters.SearchFilter,)
 
 
 class GenresViewSet(CreateListViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenresSerializer
-    filter_backends = (filters.SearchFilter,)
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
@@ -151,6 +150,7 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 class CommentsViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentsSerializer
+    pagination_class = LimitOffsetPagination
     permission_classes = [AuthorAdminModeratorOrReadOnly,
                           IsAuthenticatedOrReadOnly]
 

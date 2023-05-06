@@ -1,5 +1,5 @@
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework import mixins, viewsets
+from rest_framework import mixins, viewsets, filters
 
 from api.permissions import AdminOrReadOnly
 
@@ -12,3 +12,5 @@ class CreateListViewSet(mixins.DestroyModelMixin,
     pagination_class = LimitOffsetPagination
     lookup_field = 'slug'
     search_fields = ('name',)
+    filter_backends = (filters.SearchFilter,)
+    pagination_class = LimitOffsetPagination
